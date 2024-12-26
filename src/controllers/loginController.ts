@@ -2,10 +2,10 @@ import { Request, Response } from 'express';
 import { readDB, writeDB } from '../utils/db';
 
 export const checkUserOrCreate = (req: Request, res: Response): void => {
-    const { email } = req.body;
+    const { email, wallet_address } = req.body;
 
-    if (!email) {
-        res.status(400).json({ error: 'Email is required' });
+    if (!email || !wallet_address) {
+        res.status(400).json({ error: 'Email and wallet address are required' });
         return;
     }
 
@@ -13,24 +13,56 @@ export const checkUserOrCreate = (req: Request, res: Response): void => {
         const db = readDB();
         const users = db.users || [];
 
-        const userExists = users.some((u: any) => u.email === email);
+        const existingUser = users.find((u: any) =>
+            u.email === email ||
+            (u.wallet_address && u.wallet_address.toLowerCase() === wallet_address.toLowerCase())
+        );
 
-        if (userExists) {
-            const existingUser = users.find((u: any) => u.email === email);
-            res.status(200).json({ message: 'User exists', user: existingUser, exists: true });
+        if (existingUser) {
+            const updatedUser = {
+                ...existingUser,
+                email,
+                wallet_address,
+                wallet_balance: existingUser.wallet_balance ?? 0
+            };
+
+            const updatedUsers = users.map((u: any) =>
+                (u.email === email || (u.wallet_address && u.wallet_address.toLowerCase() === wallet_address.toLowerCase()))
+                    ? updatedUser
+                    : u
+            );
+
+            writeDB({ users: updatedUsers });
+
+            res.status(200).json({
+                message: 'User exists and updated',
+                user: updatedUser,
+                exists: true
+            });
             return;
         }
 
-        const newUser = { email, wallet_balance: 0 };
+        const newUser = {
+            email,
+            wallet_address,
+            wallet_balance: 0
+        };
+
         users.push(newUser);
 
-        writeDB({ users });
+        try {
+            writeDB({ users });
+        } catch (error) {
+            throw error;
+        }
 
-        res.status(201).json({ message: 'User created', user: newUser, exists: false });
+        res.status(201).json({
+            message: 'User created',
+            user: newUser,
+            exists: false
+        });
     } catch (error) {
-        console.error('Error checking or creating user:', error);
+        console.error('Error in checkUserOrCreate:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
-
-

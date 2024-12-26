@@ -1,0 +1,57 @@
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js
+.next/
+out/
+*.next
+*.log
+
+# Logs
+logs/
+*.log
+*.gz
+*.tgz
+*.zip
+
+# Build output
+dist/
+build/
+
+# TypeScript
+*.tsbuildinfo
+
+# MacOS
+.DS_Store
+
+# IDEs/Editors
+.idea/
+.vscode/
+*.swp
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Coverage
+coverage/
+
+# Dependencies and package locks
+package-lock.json
+yarn.lock
+
+# Static files
+/public/images/generated/
+*.bak
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.log
+
+next-env.d.ts
+

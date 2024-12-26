@@ -9,5 +9,44 @@ export const readDB = (): any => {
 };
 
 export const writeDB = (data: any): void => {
-    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
+    try {
+        fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const getUserByWalletAddress = async (walletAddress: string): Promise<any> => {
+    const db = readDB();
+    return db.users.find((user: any) =>
+        user.wallet_address?.toLowerCase() === walletAddress.toLowerCase()
+    );
+};
+
+export const createOrUpdateUser = async (userData: {
+    email: string;
+    wallet_address: string;
+    wallet_balance?: number;
+}): Promise<any> => {
+    const db = readDB();
+    const existingUserIndex = db.users.findIndex(
+        (user: any) => user.email === userData.email ||
+            user.wallet_address?.toLowerCase() === userData.wallet_address.toLowerCase()
+    );
+
+    if (existingUserIndex >= 0) {
+        db.users[existingUserIndex] = {
+            ...db.users[existingUserIndex],
+            ...userData,
+            wallet_balance: userData.wallet_balance ?? db.users[existingUserIndex].wallet_balance
+        };
+    } else {
+        db.users.push({
+            ...userData,
+            wallet_balance: userData.wallet_balance ?? 0
+        });
+    }
+
+    writeDB(db);
+    return db.users[existingUserIndex >= 0 ? existingUserIndex : db.users.length - 1];
 };

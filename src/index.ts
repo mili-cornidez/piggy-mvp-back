@@ -1,9 +1,10 @@
-import express from 'express';
+import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
-import loginRoutes from './routes/login';
+import loginRouter from './routes/login';
+import userRouter from './routes/user';
 
-const app = express();
-const PORT = 3001;
+const app: Application = express();
+const port = process.env.PORT || 3001;
 
 app.use(cors({
     origin: 'http://localhost:3000',
@@ -11,10 +12,18 @@ app.use(cors({
     credentials: true,
 }));
 
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    console.log('Body:', req.body);
+    console.log('Params:', req.params);
+    next();
+});
+
 app.use(express.json());
 
-app.use('/api/login', loginRoutes);
+app.use('/api/login', loginRouter);
+app.use('/api/user', userRouter);
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
 });

@@ -1,4 +1,9 @@
 {
   "users": [
+    {
+      "email": "milagroscornidez@gmail.com",
+      "wallet_address": "did:privy:cm515yzsb04t7u91260xhkzfa",
+      "wallet_balance": 10
+    }
   ]
 }
