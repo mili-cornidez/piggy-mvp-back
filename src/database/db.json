@@ -3,7 +3,23 @@
     {
       "email": "milagroscornidez@gmail.com",
       "wallet_address": "did:privy:cm515yzsb04t7u91260xhkzfa",
-      "wallet_balance": 10
+      "wallet_balance": 0,
+      "children": [
+        {
+          "name": "Sam",
+          "birthdate": "01/01/2010",
+          "email": "sam@gmail.com",
+          "wallet_balance": 0,
+          "id": "child-1735862222298"
+        },
+        {
+          "name": "Claire",
+          "birthdate": "01/01/2010",
+          "email": "claire@gmail.com",
+          "wallet_balance": 0,
+          "id": "child-1735865878886"
+        }
+      ]
     }
   ]
 }

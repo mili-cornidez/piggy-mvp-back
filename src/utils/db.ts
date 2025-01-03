@@ -43,10 +43,35 @@ export const createOrUpdateUser = async (userData: {
     } else {
         db.users.push({
             ...userData,
-            wallet_balance: userData.wallet_balance ?? 0
+            wallet_balance: userData.wallet_balance ?? 0,
+            children: [],
         });
     }
 
     writeDB(db);
     return db.users[existingUserIndex >= 0 ? existingUserIndex : db.users.length - 1];
+};
+
+export const createChildAccount = async (parentEmail: string, childData: any): Promise<any> => {
+    const db = readDB();
+    const parentIndex = db.users.findIndex((user: any) => user.email === parentEmail);
+
+    if (parentIndex === -1) {
+        throw new Error('Parent user not found');
+    }
+
+    const childAccount = {
+        ...childData,
+        wallet_balance: 0,
+        id: `child-${Date.now()}`
+    };
+
+    if (!db.users[parentIndex].children) {
+        db.users[parentIndex].children = [];
+    }
+
+    db.users[parentIndex].children.push(childAccount);
+    writeDB(db);
+
+    return childAccount;
 };
