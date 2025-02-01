@@ -4,10 +4,10 @@ import loginRouter from './routes/login';
 import userRouter from './routes/user';
 
 const app: Application = express();
-const port = process.env.PORT || 3001;
+const port: number = process.env.PORT ? Number(process.env.PORT) : 3001;
 
 app.use(cors({
-    origin: 'http://localhost:3000',
+        origin: '*',
     methods: ['GET', 'POST'],
     credentials: true,
 }));
@@ -24,6 +24,7 @@ app.use(express.json());
 app.use('/api/login', loginRouter);
 app.use('/api/user', userRouter);
 
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server is running on port ${port}`);
 });
+
