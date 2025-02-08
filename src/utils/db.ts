@@ -1,77 +1,59 @@
-import fs from 'fs';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
 
-const dbPath = path.join(__dirname, '../database/db.json');
+dotenv.config();
 
-export const readDB = (): any => {
-    const data = fs.readFileSync(dbPath, 'utf-8');
-    return JSON.parse(data);
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_KEY!;
+export const supabase = createClient(supabaseUrl, supabaseKey);
+
+export const getUserByWalletAddress = async (walletAddress: string) => {
+    const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('wallet_address', walletAddress)
+        .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    return data;
 };
 
-export const writeDB = (data: any): void => {
-    try {
-        fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-    } catch (error) {
-        throw error;
-    }
+export const createOrUpdateUser = async (userData: { email: string; wallet_address: string; wallet_balance?: number }) => {
+    const { data, error } = await supabase
+        .from('users')
+        .upsert([{
+            email: userData.email,
+            wallet_address: userData.wallet_address,
+            wallet_balance: userData.wallet_balance ?? 0
+        }], { onConflict: ('email') });
+
+    if (error) throw new Error(error.message);
+    return data;
 };
 
-export const getUserByWalletAddress = async (walletAddress: string): Promise<any> => {
-    const db = readDB();
-    return db.users.find((user: any) =>
-        user.wallet_address?.toLowerCase() === walletAddress.toLowerCase()
-    );
+export const createChildAccount = async (parentEmail: string, childData: { name: string; birthdate: string; email: string }) => {
+    const { data: parent, error: parentError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', parentEmail)
+        .maybeSingle();
+
+    if (parentError || !parent) throw new Error('Parent user not found');
+
+    const [day, month, year] = childData.birthdate.split('/');
+    const formattedBirthdate = `${year}-${month}-${day}`;
+
+    const { data, error } = await supabase
+        .from('children')
+        .insert([{
+            parent_id: parent.id,
+            name: childData.name,
+            birthdate: formattedBirthdate,
+            email: childData.email,
+            wallet_balance: 0
+        }]);
+
+    if (error) throw new Error(error.message);
+    return data;
 };
 
-export const createOrUpdateUser = async (userData: {
-    email: string;
-    wallet_address: string;
-    wallet_balance?: number;
-}): Promise<any> => {
-    const db = readDB();
-    const existingUserIndex = db.users.findIndex(
-        (user: any) => user.email === userData.email ||
-            user.wallet_address?.toLowerCase() === userData.wallet_address.toLowerCase()
-    );
-
-    if (existingUserIndex >= 0) {
-        db.users[existingUserIndex] = {
-            ...db.users[existingUserIndex],
-            ...userData,
-            wallet_balance: userData.wallet_balance ?? db.users[existingUserIndex].wallet_balance
-        };
-    } else {
-        db.users.push({
-            ...userData,
-            wallet_balance: userData.wallet_balance ?? 0,
-            children: [],
-        });
-    }
-
-    writeDB(db);
-    return db.users[existingUserIndex >= 0 ? existingUserIndex : db.users.length - 1];
-};
-
-export const createChildAccount = async (parentEmail: string, childData: any): Promise<any> => {
-    const db = readDB();
-    const parentIndex = db.users.findIndex((user: any) => user.email === parentEmail);
-
-    if (parentIndex === -1) {
-        throw new Error('Parent user not found');
-    }
-
-    const childAccount = {
-        ...childData,
-        wallet_balance: 0,
-        id: `child-${Date.now()}`
-    };
-
-    if (!db.users[parentIndex].children) {
-        db.users[parentIndex].children = [];
-    }
-
-    db.users[parentIndex].children.push(childAccount);
-    writeDB(db);
-
-    return childAccount;
-};

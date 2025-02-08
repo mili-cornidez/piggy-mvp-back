@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getUserByWalletAddress, createOrUpdateUser, createChildAccount } from '../utils/db';
+import {getUserByWalletAddress, createOrUpdateUser, createChildAccount, supabase} from '../utils/db';
 
 export const getUserBalance = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -19,7 +19,7 @@ export const getUserBalance = async (req: Request, res: Response): Promise<void>
 
         res.status(200).json({ balance: user.wallet_balance });
     } catch (error) {
-        console.error('Error en getUserBalance:', (error as Error).stack || (error as Error).message);
+        console.error('Error in getUserBalance:', (error as Error).stack || (error as Error).message);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -41,7 +41,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
             user,
         });
     } catch (error: any) {
-        console.error('Error en createUser:', error.stack || error.message);
+        console.error('Error in createUser:', error.stack || error.message);
         res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };
@@ -65,15 +65,28 @@ export const getUserChildren = async (req: Request, res: Response): Promise<void
             return;
         }
 
+        const { data: children, error } = await supabase
+            .from('children')
+            .select('*')
+            .eq('parent_id', user.id);
+
+        if (error) {
+            console.error('Error fetching children:', error.message);
+            res.status(500).json({ error: 'Error fetching children' });
+            return;
+        }
+
         res.status(200).json({
             message: 'Children retrieved successfully',
-            children: user.children || [],
+            children: children || []
         });
     } catch (error) {
         console.error('Error fetching user children:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+
 
 export const addChildAccount = async (req: Request, res: Response): Promise<void> => {
     try {

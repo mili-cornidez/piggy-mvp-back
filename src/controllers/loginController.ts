@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { readDB, writeDB } from '../utils/db';
+import { getUserByWalletAddress, createOrUpdateUser } from '../utils/db';
 
-export const handleLogin = (req: Request, res: Response): void => {
+export const handleLogin = async (req: Request, res: Response): Promise<void> => {
     const { email, wallet_address } = req.body;
 
     if (!email || !wallet_address) {
@@ -10,55 +10,35 @@ export const handleLogin = (req: Request, res: Response): void => {
     }
 
     try {
-        const db = readDB();
-        const users = db.users || [];
+        let user = await getUserByWalletAddress(wallet_address);
 
-        const existingUser = users.find((u: any) =>
-            u.email === email ||
-            (u.wallet_address && u.wallet_address.toLowerCase() === wallet_address.toLowerCase())
-        );
-
-        if (existingUser) {
-            const updatedUser = {
-                ...existingUser,
+        if (user) {
+            user = await createOrUpdateUser({
                 email,
                 wallet_address,
-                wallet_balance: existingUser.wallet_balance ?? 0
-            };
-
-            const updatedUsers = users.map((u: any) =>
-                (u.email === email || (u.wallet_address && u.wallet_address.toLowerCase() === wallet_address.toLowerCase()))
-                    ? updatedUser
-                    : u
-            );
-
-            writeDB({ users: updatedUsers });
+                wallet_balance: user.wallet_balance
+            });
 
             res.status(200).json({
                 message: 'User exists and updated',
-                user: updatedUser,
+                user,
                 exists: true
             });
-            return;
+        } else {
+            user = await createOrUpdateUser({
+                email,
+                wallet_address,
+                wallet_balance: 0
+            });
+
+            res.status(201).json({
+                message: 'User created',
+                user,
+                exists: false
+            });
         }
-
-        const newUser = {
-            email,
-            wallet_address,
-            wallet_balance: 0
-        };
-
-        users.push(newUser);
-
-        writeDB({ users });
-
-        res.status(201).json({
-            message: 'User created',
-            user: newUser,
-            exists: false
-        });
-    } catch (error) {
-        console.error('Error in handleLogin:', error);
+    } catch (error: any) {
+        console.error('Error in handleLogin:', error.message);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
