@@ -1,8 +1,8 @@
 import express from 'express';
-import { checkUserOrCreate } from '../controllers/loginController';
+import { handleLogin } from '../controllers/loginController';
 
 const router = express.Router();
 
-router.post('/check-user', checkUserOrCreate);
+router.post('/', handleLogin);
 
 export default router;

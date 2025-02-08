@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { readDB, writeDB } from '../utils/db';
 
-export const checkUserOrCreate = (req: Request, res: Response): void => {
+export const handleLogin = (req: Request, res: Response): void => {
     const { email, wallet_address } = req.body;
 
     if (!email || !wallet_address) {
@@ -50,11 +50,7 @@ export const checkUserOrCreate = (req: Request, res: Response): void => {
 
         users.push(newUser);
 
-        try {
-            writeDB({ users });
-        } catch (error) {
-            throw error;
-        }
+        writeDB({ users });
 
         res.status(201).json({
             message: 'User created',
@@ -62,7 +58,7 @@ export const checkUserOrCreate = (req: Request, res: Response): void => {
             exists: false
         });
     } catch (error) {
-        console.error('Error in checkUserOrCreate:', error);
+        console.error('Error in handleLogin:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
